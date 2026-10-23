@@ -1,0 +1,264 @@
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>空機99・飛鷹冒險</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:#1b2336;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:#1b2336;overscroll-behavior:none;touch-action:manipulation}
+#app{height:100dvh;display:flex;flex-direction:column;max-width:900px;margin:0 auto;background:#ffe9a8;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#top{padding:6px 10px 4px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+#ttl{font-weight:900;font-size:18px}
+#hud{font-weight:900;font-size:16px;display:flex;gap:10px;align-items:center}
+#mute{border:3px solid #1b2336;background:#fff;border-radius:8px;font-size:16px;padding:2px 8px}
+#stage{position:relative;border:4px solid #1b2336;margin:0 6px;box-shadow:4px 4px 0 #0005;background:#6ec6ff}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+#ban{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#ffcf2e;border:3px solid #1b2336;padding:4px 14px;font-weight:900;font-size:18px;border-radius:10px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#ban.on,#hint.on{opacity:1}
+#hint{position:absolute;top:36%;left:50%;transform:translateX(-50%);background:#fff;border:4px solid #1b2336;padding:8px 14px;font-weight:900;font-size:20px;border-radius:12px;opacity:0;pointer-events:none;text-align:center;width:88%}
+#tip{text-align:center;font-weight:700;font-size:14px;padding:6px 8px}
+.btn{font:900 24px inherit;font-family:inherit;min-height:76px;border:4px solid #1b2336;border-radius:16px;background:#ffcf2e;color:#1b2336;box-shadow:0 6px 0 #1b2336;padding:8px 16px;touch-action:manipulation}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1b2336;background:#ffe06b}
+#jump{width:92%;min-height:84px;margin:4px auto 12px;font-size:28px;background:#4fd36b}
+.ov{position:fixed;inset:0;display:none;background:rgba(27,35,54,.9);padding:12px;overflow:auto;z-index:5}
+.ov.on{display:flex}
+.card{background:#fff7dc;border:4px solid #1b2336;border-radius:16px;box-shadow:6px 6px 0 #0006;padding:16px;max-width:520px;width:100%;margin:auto;text-align:center}
+.card h1{margin:0 0 4px;font-size:30px}.card h2{margin:0 0 8px;font-size:22px}
+.card p{margin:6px 0;font-size:16px;line-height:1.5}
+.card .btn{width:100%;margin-top:10px}
+input{font:700 20px inherit;font-family:inherit;width:100%;padding:10px;border:3px solid #1b2336;border-radius:10px;text-align:center;-webkit-user-select:text;user-select:text}
+#qq{font-size:22px;font-weight:900;line-height:1.5;text-align:left}
+.opt{display:block;width:100%;min-height:64px;margin:10px 0;font:700 20px inherit;font-family:inherit;text-align:left;padding:10px 14px;background:#fff;border:4px solid #1b2336;border-radius:12px;box-shadow:0 4px 0 #1b2336;line-height:1.4}
+.opt.bad{background:#ddd;color:#888;text-decoration:line-through;box-shadow:none}.opt.good{background:#7de08f}
+.opt:disabled{opacity:.9}
+#qfb{font-size:18px;font-weight:700;text-align:left;line-height:1.5;min-height:24px}
+#skip{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:none;z-index:4;min-height:56px;font-size:20px}
+#cardc{width:100%;max-width:320px;border:4px solid #1b2336;image-rendering:pixelated}
+.row{display:flex;gap:8px}.row .btn{font-size:18px;min-height:64px;padding:6px}
+@media (orientation:landscape) and (max-height:520px){
+ #top{padding:2px 10px}#ttl{font-size:15px}#tip{display:none}
+ canvas{width:auto;height:calc(100dvh - 52px);margin:auto}
+ #jump{position:fixed;right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));width:30vw;min-height:76px;margin:0;opacity:.92}}
+</style></head><body>
+<div id="app">
+ <div id="top"><div id="ttl">空機99・飛鷹冒險</div><div id="hud"><span id="hv"></span><button id="mute">🔊</button></div></div>
+ <div id="stage"><canvas id="cv" width="420" height="260"></canvas><div id="ban"></div><div id="hint">點一下跳躍，越過障礙！<br>👇</div></div>
+ <div id="tip">自動前進・點一下跳躍・撿99金幣・遇問號木箱答題</div>
+ <button id="jump" class="btn">跳躍</button>
+</div>
+<button id="skip" class="btn">略過動畫</button>
+
+<div id="home" class="ov on"><div class="card">
+ <h1>空機99・飛鷹冒險</h1><h2>同窗習技，並肩闖關，讓榮耀升空！</h2>
+ <p>自動向右前進，只要點「跳躍」按鈕。<br>遇到問號木箱會自動停下答題。</p>
+ <input id="nick" maxlength="8" placeholder="輸入你的暱稱">
+ <p id="best"></p>
+ <button id="start" class="btn">開始闖關</button>
+ <p style="font-size:13px;color:#555">本遊戲為航空知識與同學紀念用途，不作為實際維修指引。<br>國徽為紀念性像素意象，非官方標準圖樣。</p>
+</div></div>
+
+<div id="quiz" class="ov"><div class="card" style="text-align:left">
+ <h2 id="qn"></h2><div id="qq"></div><div id="qopts"></div><div id="qfb"></div>
+ <button id="qgo" class="btn" style="display:none">繼續闖關</button>
+</div></div>
+
+<div id="over" class="ov"><div class="card"><h1>弟兄，整裝再出發！</h1><p>別擔心，已完成的題目和分數都保留。</p><button id="cont" class="btn">從本段繼續</button></div></div>
+<div id="pause" class="ov"><div class="card"><h2>遊戲已暫停</h2><button id="resume" class="btn">繼續</button></div></div>
+
+<div id="res" class="ov"><div class="card">
+ <h2>空機99・榮耀起飛</h2>
+ <canvas id="cardc" width="320" height="270"></canvas>
+ <p id="rn" style="font-weight:900;font-size:20px;margin-bottom:0"></p>
+ <p id="rt" style="font-weight:900;color:#b3261e;font-size:20px;margin:2px 0"></p>
+ <p id="rs" style="font-size:17px;font-weight:700"></p>
+ <p style="font-weight:700">當年同窗習技，今日並肩闖關。<br>空機九九，友誼歷久彌堅。</p>
+ <button id="again" class="btn">再玩一次</button>
+ <div class="row"><button id="cp" class="btn">複製戰績</button><button id="homeb" class="btn">回到首頁</button></div>
+</div></div>
+
+<script>
+(()=>{
+const W=420,H=260,GY=215,SP=110,G=1300,VJ=560,END=15600,SX=[0,5200,10400];
+const $=id=>document.getElementById(id),cv=$('cv'),X=cv.getContext('2d');
+const QS=[
+{q:'飛機在地面停放與滑行時，主要由哪個部件支撐？',o:['起落架','座艙罩','天線'],e:'起落架負責支撐飛機，並協助地面移動。'},
+{q:'依維修規範，將螺栓鎖到指定扭力，通常需要哪一種工具？',o:['扭力扳手','捲尺','油漆刷'],e:'扭力扳手用來控制施加的扭力；實際數值與操作必須依核准規範。'},
+{q:'F-104這類噴射機，主要依靠哪個系統產生推力？',o:['噴射引擎','起落架輪胎','航行燈'],e:'噴射引擎產生推力，使飛機向前飛行。'},
+{q:'整備結束後發現少了一支工具，應該怎麼做？',o:['通報並依程序查找','當作沒看見','下次再找'],e:'工具清點與異常通報，是維護安全的重要環節。'},
+{q:'在機坪發現螺絲或小金屬片，較適當的處理是？',o:['依安全規定處理並通報','踢到旁邊','不用理會'],e:'機坪異物可能造成危害，應依規定處理。'},
+{q:'整備項目很多，怎麼做比較不容易遺漏？',o:['依核准檢查表逐項確認','只憑記憶','只看外觀'],e:'按檢查表逐項確認，可以降低遺漏的機會。'}];
+const ENC=['太棒了，弟兄！','同袍都為你喝采！','整備功夫扎實！','越來越熟練了！','飛鷹精神！','最後一哩路，加油！'];
+const DIM={box:{w:32,h:30},tire:{w:28,h:28},cone:{w:18,h:26}};
+const OBD=[[900,'box'],[1500,'cone'],[2200,'box'],[3500,'tire'],[4200,'cone'],[5900,'box'],[6400,'tire'],[8500,'tire'],[9400,'box'],[9800,'cone'],[10900,'cone'],[11400,'box'],[12400,'tire'],[12800,'box'],[13050,'cone'],[14400,'tire']];
+const OB=OBD.map(([x,t],i)=>({id:'o'+i,x,t,w:DIM[t].w,h:DIM[t].h,hit:false}));
+const CRS=[2900,4700,7900,10200,13400,14800].map((x,i)=>({id:'q'+i,i,x,done:false}));
+const ENS=[[7100,'ball'],[8800,'tire'],[11700,'ball'],[13900,'tire']].map(([t,k],i)=>({id:'e'+i,t,k,started:false,warn:0,on:false,x:0}));
+const COINS=[];
+OB.forEach((o,i)=>{[12,35,58,81].forEach((dx,k)=>{const t=dx/SP,h=VJ*t-.5*G*t*t;COINS.push({id:'c'+i+'_'+k,x:o.x-28+dx,y:h+20,got:false})});
+ for(let k=0;k<3;k++)COINS.push({id:'g'+i+'_'+k,x:o.x+130+k*26,y:20,got:false})});
+const FAR=[];
+[['gate',140],['flag',330],['school',420],['tree',640],['tree',700],['school',780],['tree',1000],['school',1100],['flag',1330],['tree',1380],['school',1600],['tree',1850],['school',2050],['tree',2300],['tree',2350],
+['hangar',2650],['cab',2860],['tires',2910],['hangar',3050],['hangar',3450],['cab',3660],['tires',3710],['hangar',3850],['hangar',4250],['cab',4480],['hangar',4650],['tires',4900],
+['mount',5300],['wind',5600],['mount',5700],['jetp',6000,1],['mount',6100],['tower',6500],['mount',6600],['jetp',6900,1.25],['wind',7300],['mount',7400],['tower',7700],['jetp',8000,1.4]].forEach(a=>FAR.push({k:a[0],f:a[1],s:a[2]||1}));
+let SV={name:'',best:0,mute:false};
+try{Object.assign(SV,JSON.parse(localStorage.getItem('k99')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('k99',JSON.stringify(SV))}catch(e){}};
+let st='home',prev='',px,y,vy,hearts,score,coinN,badges,firstOK,inv,hurtT,jb,tutDone,cam=0,time=0,endT=0,tries=0,qc=null,resumeAt=0,segShown=[0,0,0],enemy=[],parts=[],floats=[],bt,name='';
+function sh(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+/* audio */
+let AC=null,mute=SV.mute;
+function snd(f,d,v,tp){if(mute)return;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state=='suspended')AC.resume();const o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;o.type=tp||'sine';o.frequency.value=f;g.gain.setValueAtTime(v||.05,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(n+d)}catch(e){}}
+/* sprites */
+function hero(c,x,y,pose,t,k){const u=2*k,o=x-7*u,p=y-22*u;
+ const r=(a,b,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(o+a*u),Math.round(p+b*u),Math.ceil(w*u),Math.ceil(h*u))};
+ const D='#1c2f5e',S='#f2c9a0',SH='#a9d3f2',SD='#78a8d0',K='#111',GD='#ffd34d';
+ const ph=Math.floor(t*10)%2,rn=pose=='run';let a=0,b=0;if(rn){a=ph?1:-1;b=-a}if(pose=='jump'){a=1;b=-1}
+ r(3+a,16,4,4,D);r(7+b,16,4,4,D);r(3+a,20,5,2,K);r(7+b,20,5,2,K);
+ r(2,8,10,7,SH);r(4,8,2,3,'#eef7fd');r(8,8,2,3,'#eef7fd');r(6,9,1,6,SD);r(6,10,1,1,GD);r(6,12,1,1,GD);
+ r(3,11,3,3,SD);r(3,11,3,1,'#5784ad');r(8,11,3,3,SD);r(8,11,3,1,'#5784ad');
+ r(2,8,2,1,D);r(10,8,2,1,D);r(8,10,2,1,'#fff');r(3,10,1,1,GD);
+ r(2,15,10,1,K);r(6,15,2,1,'#d9dde2');
+ const sw=rn?(ph?1:-1):0;
+ r(0,9,2,3,SH);r(12,9,2,3,SH);
+ if(pose=='hurt'){r(0,6,2,3,S);r(12,6,2,3,S)}
+ else if(pose=='think'){r(0,12,2,3,S);r(11,11,2,2,S);r(10,8,2,3,S)}
+ else if(pose=='salute'){r(0,12,2,3,S);r(12,6,2,3,SH);r(10,4,3,2,S)}
+ else{r(0,12+sw,2,3,S);r(12,12-sw,2,3,S)}
+ r(3,4,8,5,S);r(8,6,1,1,K);if(pose=='hurt'){r(8,6,2,1,K);r(9,8,2,1,'#c0603a')}
+ r(0,1,14,2,D);r(2,3,10,1,'#101d3d');r(8,1,2,2,GD);r(8,2,2,1,'#fff');r(6,4,8,1,K);r(10,4,2,1,'#6a7a8a')}
+function jet(c,x,y,s,ang,gear){c.save();c.translate(x,y);c.rotate(ang||0);c.scale(s,s);
+ const P=(pts,f)=>{c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fillStyle=f;c.fill();c.lineWidth=2;c.strokeStyle='#1b2336';c.stroke()};
+ if(gear){c.fillStyle='#1b2336';c.fillRect(28,5,3,12);c.fillRect(-26,5,3,12);c.fillRect(24,15,11,5);c.fillRect(-31,15,11,5)}
+ P([[-62,-8],[-40,-7],[-44,-30],[-62,-30]],'#aeb8c4');
+ c.fillStyle='#8c97a5';c.fillRect(-72,-35,30,5);c.strokeStyle='#1b2336';c.lineWidth=2;c.strokeRect(-72,-35,30,5);
+ P([[74,1],[40,-5],[-44,-8],[-66,-7],[-66,6],[-10,7],[40,6]],'#cfd6de');
+ P([[14,3],[-10,3],[-20,13],[2,13]],'#9aa5b3');
+ P([[10,-6],[34,-6],[24,-13],[14,-13]],'#1b2a45');
+ c.fillStyle='#3b4452';c.fillRect(-70,-5,5,10);
+ c.fillStyle='#1d4fa8';c.beginPath();c.arc(-26,-1,5,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(-26,-1,2.3,0,7);c.fill();
+ c.restore()}
+function emblem(c,x,y,R){const B='#1d3f9a';c.fillStyle=B;c.beginPath();c.arc(x,y,R,0,7);c.fill();c.fillStyle='#fff';
+ for(let i=0;i<12;i++){const a=i*Math.PI/6,q=(m,d)=>[x+Math.cos(a+d)*R*m,y+Math.sin(a+d)*R*m];c.beginPath();let p=q(.3,-.14);c.moveTo(p[0],p[1]);p=q(.92,0);c.lineTo(p[0],p[1]);p=q(.3,.14);c.lineTo(p[0],p[1]);c.fill()}
+ c.beginPath();c.arc(x,y,R*.33,0,7);c.fill();c.fillStyle=B;c.beginPath();c.arc(x,y,R*.25,0,7);c.fill()}
+/* scene */
+const blk=(x,y,w,h,f)=>{X.fillStyle='rgba(0,0,0,.25)';X.fillRect(x+3,y+3,w,h);X.fillStyle='#1b2336';X.fillRect(x,y,w,h);X.fillStyle=f;X.fillRect(x+2,y+2,w-4,h-4)};
+const cr=(x,y,w,h,f)=>{X.fillStyle=f;X.fillRect(x,y,w,h)};
+const sky=X.createLinearGradient(0,0,0,GY);sky.addColorStop(0,'#5fb8f5');sky.addColorStop(1,'#dff4ff');
+function far(k,sx,s){const b=GY;
+ if(k=='gate'){cr(sx,b-70,14,70,'#e8e8e8');cr(sx+96,b-70,14,70,'#e8e8e8');cr(sx-10,b-96,130,16,'#24489a');cr(sx-4,b-100,118,5,'#ffcf2e');cr(sx+14,b-78,82,26,'#fff7dc');X.fillStyle='#1b2336';X.font='900 18px sans-serif';X.textAlign='center';X.fillText('空機99',sx+55,b-58)}
+ else if(k=='flag'){cr(sx,b-110,4,110,'#888');cr(sx+4,b-108,36,24,'#d8262e');cr(sx+4,b-108,17,12,'#1d3f9a');cr(sx+10,b-104,5,5,'#fff')}
+ else if(k=='school'){cr(sx,b-72,150,72,'#e9d8b0');cr(sx-5,b-80,160,10,'#b5483a');for(let i=0;i<5;i++){cr(sx+10+i*28,b-58,16,16,'#79b4dc');cr(sx+10+i*28,b-30,16,16,'#79b4dc')}cr(sx+64,b-26,22,26,'#7a4b2a')}
+ else if(k=='tree'){cr(sx,b-34,8,34,'#7a4b2a');X.fillStyle='#2f9e44';X.beginPath();X.arc(sx+4,b-48,22,0,7);X.arc(sx-10,b-38,14,0,7);X.arc(sx+18,b-38,14,0,7);X.fill()}
+ else if(k=='hangar'){cr(sx,b-80,170,80,'#8795a8');X.fillStyle='#8795a8';X.beginPath();X.ellipse(sx+85,b-80,85,30,0,Math.PI,0);X.fill();cr(sx+15,b-62,140,62,'#2a3342');jet(X,sx+85,b-24,.82,0,true);cr(sx,b-10,170,4,'#6b7889')}
+ else if(k=='cab'){blk(sx,b-56,44,56,'#d8423a');for(let i=0;i<3;i++)cr(sx+8,b-48+i*17,28,3,'#7a1c18')}
+ else if(k=='tires'){for(let i=0;i<3;i++){X.fillStyle='#222';X.beginPath();X.arc(sx+14,b-12-i*22,14,0,7);X.fill();X.fillStyle='#888';X.beginPath();X.arc(sx+14,b-12-i*22,5,0,7);X.fill()}}
+ else if(k=='mount'){X.fillStyle='#7e93b5';X.beginPath();X.moveTo(sx,b);X.lineTo(sx+110,b-100);X.lineTo(sx+230,b);X.fill();X.fillStyle='#fff';X.beginPath();X.moveTo(sx+90,b-80);X.lineTo(sx+110,b-100);X.lineTo(sx+130,b-80);X.fill()}
+ else if(k=='wind'){cr(sx,b-70,4,70,'#888');for(let i=0;i<4;i++)cr(sx+4+i*8,b-70+i*2,8,12-i*2,i%2?'#fff':'#ff7a1a')}
+ else if(k=='tower'){cr(sx+10,b-90,16,90,'#cfd6de');blk(sx-6,b-122,48,32,'#79b4dc');cr(sx-10,b-126,56,6,'#555')}
+ else if(k=='jetp'){jet(X,sx,b-19*s,s,0,true)}}
+function clouds(){X.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<5;i++){const cx=((i*170-cam*.15)%(W+120)+W+120)%(W+120)-60,cy=26+(i%3)*24;X.fillRect(cx,cy,56,12);X.fillRect(cx+10,cy-8,32,10)}}
+function ground(){const cl=[['#c9a46a','#5fbf4a'],['#9aa3ad','#7d8793'],['#4f5966','#6a7480']];
+ for(let i=0;i<3;i++){const a=Math.max(0,SX[i]-cam),b=Math.min(W,(i<2?SX[i+1]:1e6)-cam);if(b<=a)continue;X.fillStyle=cl[i][0];X.fillRect(a,GY,b-a,H-GY);X.fillStyle=cl[i][1];X.fillRect(a,GY,b-a,9);X.fillStyle='#1b2336';X.fillRect(a,GY,b-a,3)}
+ X.fillStyle='#fff';for(let k=0;k<8;k++){const wx=Math.floor(cam/70)*70+k*70;if(wx>=SX[2])X.fillRect(wx-cam,GY+32,36,4)}
+ const ex=END-cam+30;if(ex<W+40){cr(ex,GY-60,6,60,'#888');blk(ex-60,GY-70,130,24,'#ffcf2e');X.fillStyle='#1b2336';X.font='900 15px sans-serif';X.textAlign='center';X.fillText('起飛準備區',ex+5,GY-53)}}
+function scene(){X.fillStyle=sky;X.fillRect(0,0,W,H);clouds();for(const f of FAR){const sx=f.f-cam*.5;if(sx<-240||sx>W+20)continue;far(f.k,sx,f.s)}ground()}
+function draw(){
+ if(st=='end'){drawEnd();return}
+ cam=st=='home'?0:Math.max(0,px-90);scene();
+ for(const o of OB){if(o.hit)continue;const sx=o.x-cam;if(sx<-50||sx>W+10)continue;const by=GY-o.h;
+  if(o.t=='box'){blk(sx,by,o.w,o.h,'#d8423a');cr(sx+10,by-4,12,4,'#1b2336')}
+  else if(o.t=='tire'){X.fillStyle='#1b2336';X.beginPath();X.arc(sx+14,GY-14,14,0,7);X.fill();X.fillStyle='#444';X.beginPath();X.arc(sx+14,GY-14,10,0,7);X.fill();X.fillStyle='#bbb';X.beginPath();X.arc(sx+14,GY-14,4,0,7);X.fill()}
+  else{X.fillStyle='#1b2336';X.beginPath();X.moveTo(sx-1,GY);X.lineTo(sx+9,by-1);X.lineTo(sx+19,GY);X.fill();X.fillStyle='#ff7a1a';X.beginPath();X.moveTo(sx+3,GY-2);X.lineTo(sx+9,by+4);X.lineTo(sx+15,GY-2);X.fill();cr(sx+5,GY-14,8,4,'#fff')}}
+ for(const c of CRS){const sx=c.x-cam;if(sx<-50||sx>W+10)continue;const by=GY-92+(c.done?0:Math.sin(time*3+c.i)*3);
+  if(!c.done){X.fillStyle='rgba(255,230,80,'+(.25+.15*Math.sin(time*5))+')';X.beginPath();X.arc(sx+19,by+19,30,0,7);X.fill()}
+  blk(sx,by,38,38,c.done?'#a8753a':'#c98a3e');X.fillStyle='#8a5a22';for(let i=1;i<4;i++)X.fillRect(sx+3,by+i*9,32,2);
+  X.fillStyle='#b8c0c8';[[2,2],[30,2],[2,30],[30,30]].forEach(p=>X.fillRect(sx+p[0],by+p[1],6,6));
+  X.font='900 28px sans-serif';X.textAlign='center';X.lineWidth=4;X.strokeStyle='#1b2336';X.fillStyle='#ffe14d';const ch=c.done?'✓':'?';X.strokeText(ch,sx+19,by+29);X.fillText(ch,sx+19,by+29);
+  if(c.done){cr(sx-4,by-10,46,8,'#c98a3e');X.strokeStyle='#1b2336';X.lineWidth=2;X.strokeRect(sx-4,by-10,46,8)}}
+ for(const c of COINS){if(c.got)continue;const sx=c.x-cam;if(sx<-20||sx>W+20)continue;const cy=GY-c.y+Math.sin(time*4+c.x)*1.5;X.fillStyle='#1b2336';X.beginPath();X.arc(sx,cy,10,0,7);X.fill();X.fillStyle='#ffc61a';X.beginPath();X.arc(sx,cy,8,0,7);X.fill();X.fillStyle='#fff3a0';X.fillRect(sx-5,cy-5,3,3);X.fillStyle='#8a5a00';X.font='900 9px sans-serif';X.textAlign='center';X.fillText('99',sx,cy+3)}
+ for(const e of ENS){if(e.warn>0&&Math.floor(time*8)%2){const wy=GY-(e.k=='ball'?40:30);X.fillStyle='#1b2336';X.beginPath();X.moveTo(W-44,wy+22);X.lineTo(W-18,wy+22);X.lineTo(W-31,wy-4);X.fill();X.fillStyle='#ffcf2e';X.beginPath();X.moveTo(W-39,wy+19);X.lineTo(W-23,wy+19);X.lineTo(W-31,wy+2);X.fill();X.fillStyle='#1b2336';X.font='900 14px sans-serif';X.textAlign='center';X.fillText('!',W-31,wy+17)}
+  if(!e.on)continue;const sx=e.x-cam;
+  if(e.k=='ball'){X.fillStyle='#1b2336';X.beginPath();X.arc(sx,GY-22,11,0,7);X.fill();X.fillStyle='#ff8fb3';X.beginPath();X.arc(sx,GY-22,9,0,7);X.fill();cr(sx-9,GY-23,18,3,'#fff')}
+  else{X.save();X.translate(sx,GY-13);X.rotate(-time*6);X.fillStyle='#1b2336';X.beginPath();X.arc(0,0,14,0,7);X.fill();X.fillStyle='#555';X.beginPath();X.arc(0,0,9,0,7);X.fill();X.fillStyle='#ddd';X.fillRect(-9,-1,18,2);X.fillRect(-1,-9,2,18);X.restore()}}
+ if(st!='home'){const pose=st=='quiz'?'think':hurtT>0?'hurt':y>0?'jump':st=='tut'?'stand':'run';
+  X.globalAlpha=inv>0&&Math.floor(time*12)%2?.35:1;hero(X,px-cam,GY-y,pose,time,1);X.globalAlpha=1}
+ for(const p of parts){X.fillStyle=p.c;X.fillRect(p.x-cam,p.y,4,4)}
+ X.font='900 16px sans-serif';X.textAlign='center';X.lineWidth=3;for(const f of floats){X.strokeStyle='#1b2336';X.fillStyle='#ffe14d';X.strokeText(f.t,f.x-cam,f.y);X.fillText(f.t,f.x-cam,f.y)}}
+function drawEnd(){const t=endT;cam=END-260;scene();
+ for(let i=0;i<3;i++)hero(X,40+i*32,GY,'salute',t,1);
+ const jx=200+(t>1?18*(t-1)**2:0),lift=t>3.2?45*(t-3.2)**2:0,ang=t>3?-Math.min(.4,(t-3)*.35):0;
+ jet(X,jx,GY-21-lift,1.1,ang,t<3.4);
+ if(t>5.2){X.font='900 36px sans-serif';X.textAlign='center';X.lineWidth=6;X.strokeStyle='#1b2336';X.fillStyle='#ffe14d';X.strokeText('榮耀起飛！',W/2,110);X.fillText('榮耀起飛！',W/2,110)}}
+/* game */
+const hud=()=>{$('hv').textContent='❤'.repeat(hearts)+'🖤'.repeat(3-hearts)+' 🪙'+coinN+' 🎖'+badges+'/6 ★'+score};
+function ban(t){const b=$('ban');b.textContent=t;b.classList.add('on');clearTimeout(bt);bt=setTimeout(()=>b.classList.remove('on'),1900)}
+function reset(){px=60;y=0;vy=0;hearts=3;score=0;coinN=0;badges=0;firstOK=0;inv=0;hurtT=0;jb=0;tutDone=false;segShown=[0,0,0];parts=[];floats=[];
+ COINS.forEach(c=>c.got=false);CRS.forEach(c=>c.done=false);OB.forEach(o=>o.hit=false);ENS.forEach(e=>{e.started=false;e.warn=0;e.on=false});hud()}
+function begin(){$('home').classList.remove('on');$('res').classList.remove('on');$('skip').style.display='none';reset();st='play';resumeAt=performance.now()}
+function tryJump(){if(performance.now()-resumeAt<250)return;
+ if(st=='tut'){st='play';tutDone=true;$('hint').classList.remove('on');vy=VJ;y=.01;snd(520,.1)}else if(st=='play')jb=.12}
+const sg=()=>px>=SX[2]?2:px>=SX[1]?1:0;
+function dmg(){if(inv>0)return false;hearts--;inv=2;hurtT=.6;snd(170,.25,.05);hud();if(hearts<=0){st='over';$('over').classList.add('on')}return true}
+const hitR=(a,b,c,d)=>px+8>a&&px-8<b&&y+38>c&&y+2<d;
+function upd(dt){
+ px+=SP*dt;cam=Math.max(0,px-90);
+ if(inv>0)inv-=dt;if(hurtT>0)hurtT-=dt;if(jb>0)jb-=dt;
+ if(jb>0&&y<=0&&vy<=0){vy=VJ;y=.01;jb=0;snd(520,.1)}
+ if(y>0||vy>0){vy-=G*dt;y+=vy*dt;if(y<=0){y=0;vy=0}}
+ if(!tutDone&&px>=OB[0].x-28){px=OB[0].x-28;st='tut';$('hint').classList.add('on');return}
+ const s=sg();if(!segShown[s]){segShown[s]=1;ban(['第一段・校園出發','第二段・機棚實習','第三段・跑道榮耀'][s])}
+ for(const c of CRS)if(!c.done&&px>=c.x-70){px=c.x-70;openQuiz(c);return}
+ for(const c of COINS)if(!c.got&&Math.abs(c.x-px)<14&&c.y>y-6&&c.y<y+46){c.got=true;coinN++;score+=10;floats.push({t:'+10',x:c.x,y:GY-c.y-10,l:.8});for(let i=0;i<6;i++)parts.push({x:c.x,y:GY-c.y,vx:(Math.random()-.5)*120,vy:-Math.random()*100,l:.5,c:'#ffd84a'});snd(1300,.1,.04);setTimeout(()=>snd(1800,.12,.035),70);hud()}
+ OB.forEach((o,i)=>{if(!o.hit&&i>0&&hitR(o.x+3,o.x+o.w-3,0,o.h-3)&&dmg())o.hit=true});
+ for(const e of ENS){if(!e.started&&px>=e.t){e.started=true;e.warn=1}
+  if(e.warn>0){e.warn-=dt;if(e.warn<=0){e.on=true;e.x=cam+W+30}}
+  if(e.on){e.x-=(e.k=='ball'?100:130)*dt;const r=e.k=='ball'?[e.x-9,e.x+9,12,32]:[e.x-12,e.x+12,0,26];if(hitR(...r)&&dmg())e.on=false;if(e.x<cam-40)e.on=false}}
+ for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=300*dt;p.l-=dt}parts=parts.filter(p=>p.l>0);
+ for(const f of floats){f.y-=30*dt;f.l-=dt}floats=floats.filter(f=>f.l>0);
+ if(px>=END&&st=='play'){st='end';endT=0;score+=990;hud();$('skip').style.display='block';snd(660,.2);setTimeout(()=>snd(880,.3),180)}}
+/* quiz */
+function openQuiz(c){st='quiz';qc=c;tries=0;const q=QS[c.i];$('qn').textContent='木箱挑戰 '+(c.i+1)+'/6';$('qq').textContent=q.q;$('qfb').textContent='';$('qgo').style.display='none';
+ const bx=$('qopts');bx.innerHTML='';sh([0,1,2]).forEach(id=>{const b=document.createElement('button');b.className='opt';b.textContent=q.o[id];b.dataset.id=id;b.onclick=()=>answer(b,id);bx.appendChild(b)});$('quiz').classList.add('on')}
+function answer(b,id){if(st!='quiz'||qc.done)return;const q=QS[qc.i];
+ if(id===0){const f=tries==0;score+=f?99:66;if(f)firstOK++;qc.done=true;badges++;hearts=Math.min(3,hearts+1);hud();
+  document.querySelectorAll('.opt').forEach(x=>x.disabled=true);b.classList.add('good');
+  $('qfb').innerHTML='✅ 答對了！'+(f?'+99分':'+66分')+'<br>'+q.e+'<br>🎖 獲得整備徽章，愛心恢復！'+ENC[qc.i];$('qgo').style.display='block';snd(880,.15);setTimeout(()=>snd(1180,.25),120)}
+ else{tries++;b.disabled=true;b.classList.add('bad');$('qfb').textContent='💡 差一點點，再想想看，你可以的！';snd(300,.15,.03)}}
+/* result */
+const ttl=()=>firstOK==6?'空機99・王牌整備官':firstOK>=4?'空機99・飛鷹勇士':'空機99・同袍齊心';
+function showResult(){st='result';$('skip').style.display='none';
+ if(score>SV.best){SV.best=score;save()}
+ const c=$('cardc').getContext('2d'),g=c.createLinearGradient(0,0,0,270);g.addColorStop(0,'#3f8fe0');g.addColorStop(1,'#cdeeff');c.fillStyle=g;c.fillRect(0,0,320,270);
+ c.fillStyle='rgba(255,255,255,.85)';c.fillRect(20,100,60,10);c.fillRect(240,60,50,10);
+ emblem(c,160,50,38);jet(c,175,140,1.15,-.1,false);
+ c.fillStyle='#6a7480';c.fillRect(0,245,320,25);c.fillStyle='#1b2336';c.fillRect(0,245,320,3);
+ hero(c,70,245,'salute',0,2.4);
+ c.fillStyle='#1b2336';c.font='900 16px sans-serif';c.textAlign='center';c.fillText('空機99',230,230);
+ $('rn').textContent='飛行員：'+name;$('rt').textContent=ttl();
+ $('rs').innerHTML='🪙 金幣 '+coinN+' 枚<br>🎖 首次答對 '+firstOK+'/6（6題全數完成）<br>★ 總分 '+score+'（最高 '+SV.best+'）';
+ $('res').classList.add('on')}
+function copy(){const t='我完成了《空機99・飛鷹冒險》，收集'+coinN+'枚金幣，首次答對'+firstOK+'題，獲得'+score+'分，榮獲'+ttl()+'！空機九九，友誼歷久彌堅！';
+ const ok=()=>{$('cp').textContent='已複製 ✔';setTimeout(()=>$('cp').textContent='複製戰績',1500)};
+ function fb(){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){prompt('請手動複製',t)}a.remove()}
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()}
+/* events (registered once) */
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();tryJump()});
+document.addEventListener('keydown',e=>{if(e.code=='Space'||e.code=='ArrowUp'){if(document.activeElement&&document.activeElement.tagName=='INPUT')return;e.preventDefault();if(!e.repeat)tryJump()}});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+$('nick').value=SV.name||'';$('best').textContent=SV.best?'最高分：'+SV.best:'';
+$('start').onclick=()=>{name=$('nick').value.trim()||'同袍';SV.name=name;save();snd(600,.08);begin()};
+$('qgo').onclick=()=>{$('quiz').classList.remove('on');for(let i=0;i<8;i++)parts.push({x:qc.x+19,y:GY-90,vx:(Math.random()-.5)*160,vy:-120-Math.random()*80,l:.8,c:i%2?'#ffd84a':'#8fd3ff'});floats.push({t:'🎖+1',x:qc.x+19,y:GY-100,l:1.2});st='play';resumeAt=performance.now()};
+$('cont').onclick=()=>{const s=sg();px=s?SX[s]:60;hearts=3;y=0;vy=0;inv=1.2;hurtT=0;OB.forEach(o=>o.hit=false);ENS.forEach(e=>{e.on=false;e.warn=0;e.started=e.t<px});segShown[s]=0;hud();$('over').classList.remove('on');st='play';resumeAt=performance.now()};
+$('skip').onclick=()=>{if(st=='end')showResult()};
+$('again').onclick=begin;$('cp').onclick=copy;
+$('homeb').onclick=()=>{$('res').classList.remove('on');$('home').classList.add('on');$('best').textContent=SV.best?'最高分：'+SV.best:'';st='home'};
+$('mute').textContent=mute?'🔇':'🔊';
+$('mute').onclick=()=>{mute=!mute;SV.mute=mute;save();$('mute').textContent=mute?'🔇':'🔊'};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&(st=='play'||st=='tut'||st=='end')){prev=st;st='pause';$('pause').classList.add('on')}});
+$('resume').onclick=()=>{$('pause').classList.remove('on');st=prev||'play';resumeAt=performance.now()};
+/* single loop */
+let last=0;
+function loop(t){const dt=Math.min(.033,Math.max(0,(t-last)/1000||0));last=t;time+=dt;
+ if(st=='play')upd(dt);else if(st=='end'){endT+=dt;if(endT>=6.5)showResult()}
+ draw();requestAnimationFrame(loop)}
+reset();requestAnimationFrame(loop);
+})();
+</script></body></html>
